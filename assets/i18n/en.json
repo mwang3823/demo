@@ -1,0 +1,21 @@
+{
+  "login_screen": {
+    "name_app": "Nha Be Water Supply Joint Stock Company",
+    "role_app": "Employee App",
+    "user_name": "Username",
+    "password": "Password",
+    "login": "Login",
+    "clear": "Reset"
+  },
+  "statistical_screen": {
+    "task_statistics": "Task Statistics",
+    "quantity": "Quantity",
+    "no_data": "No Data",
+    "impl_list": "Implementation List",
+    "list_of_household": "Household List",
+    "household_name": "Household Head's Name",
+    "address": "Address",
+    "type": "Type",
+    "date": "Date"
+  }
+}

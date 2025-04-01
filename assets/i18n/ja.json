@@ -1,0 +1,21 @@
+{
+  "login_screen": {
+    "name_app": "ナベ水道株式会社",
+    "role_app": "従業員アプリ",
+    "user_name": "ユーザー名",
+    "password": "パスワード",
+    "login": "ログイン",
+    "clear": "リセット"
+  },
+  "statistical_screen": {
+    "task_statistics": "作業統計",
+    "quantity": "数量",
+    "no_data": "データなし",
+    "impl_list": "実施リスト",
+    "list_of_household": "世帯リスト",
+    "household_name": "世帯主の名前",
+    "address": "住所",
+    "type": "種類",
+    "date": "日付"
+  }
+}

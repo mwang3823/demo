@@ -1,0 +1,23 @@
+{
+  "login_screen":
+  {
+    "name_app": "Công ty Cổ Phần Cấp Nước Nhà Bè",
+    "role_app": "Ứng dụng nhân viên",
+    "user_name": "Tên người dùng",
+    "password": "Mật khẩu",
+    "login": "Đăng nhập",
+    "clear": "Nhập lại"
+  },
+  "statistical_screen":
+  {
+    "task_statistics": "Thống kê công tác",
+    "quantity": "Số lượng",
+    "no_data": "Không có dữ liệu",
+    "impl_list": "Danh sách thực hiện",
+    "list_of_household": "Danh bộ",
+    "household_name": "Tên chủ hộ",
+    "address": "Địa chỉ",
+    "type": "Loại",
+    "date":"Ngày"
+  }
+}

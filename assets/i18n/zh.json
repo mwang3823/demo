@@ -1,0 +1,21 @@
+{
+  "login_screen": {
+    "name_app": "家贝水务股份公司",
+    "role_app": "员工应用",
+    "user_name": "用户名",
+    "password": "密码",
+    "login": "登录",
+    "clear": "重置"
+  },
+  "statistical_screen": {
+    "task_statistics": "工作统计",
+    "quantity": "数量",
+    "no_data": "无数据",
+    "impl_list": "实施列表",
+    "list_of_household": "户籍列表",
+    "household_name": "户主姓名",
+    "address": "地址",
+    "type": "类型",
+    "date": "日期"
+  }
+}

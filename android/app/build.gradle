@@ -1,0 +1,96 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+// Đọc thông tin từ key.properties
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+android {
+
+    signingConfigs {
+        release {
+            storeFile file(keystoreProperties["storeFile"])
+            storePassword keystoreProperties["storePassword"]
+            keyAlias keystoreProperties["keyAlias"]
+            keyPassword keystoreProperties["keyPassword"]
+        }
+    }
+
+    namespace "com.example.demo_architecture"
+    compileSdk 35
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    defaultConfig {
+        applicationId "com.example.demo_architecture"
+        minSdk 21
+        targetSdk 35
+        versionCode flutter.versionCode
+        versionName flutter.versionName
+    }
+
+    flavorDimensions "version"
+
+//    productFlavors {
+//        dev {
+//            dimension "version"
+//            applicationIdSuffix ".dev"
+//            versionNameSuffix "-dev"
+//            buildConfigField "String", "BASE_URL", "\"https://dev.api.com\""
+//        }
+//
+//        staging {
+//            dimension "version"
+//            applicationIdSuffix ".staging"
+//            versionNameSuffix "-staging"
+//            buildConfigField "String", "BASE_URL", "\"https://staging.api.com\""
+//        }
+//
+//        prod {
+//            dimension "version"
+//            buildConfigField "String", "BASE_URL", "\"https://prod.api.com\""
+//        }
+//    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        beta {
+            minifyEnabled false
+            applicationIdSuffix ".beta"
+        }
+    }
+}
+
+flutter {
+    source "../.."
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version" // Hỗ trợ Kotlin
+    implementation "com.google.android.play:core-ktx:1.8.1"
+
+    implementation platform('com.google.firebase:firebase-bom:33.11.0')
+    implementation 'com.google.firebase:firebase-analytics'
+
+}
+apply plugin: 'com.google.gms.google-services'

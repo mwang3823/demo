@@ -1,0 +1,21 @@
+{
+  "login_screen": {
+    "name_app": "Société par Actions de Distribution d'Eau de Nha Be",
+    "role_app": "Application Employé",
+    "user_name": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "login": "Se connecter",
+    "clear": "Réinitialiser"
+  },
+  "statistical_screen": {
+    "task_statistics": "Statistiques des tâches",
+    "quantity": "Quantité",
+    "no_data": "Aucune donnée",
+    "impl_list": "Liste de mise en œuvre",
+    "list_of_household": "Liste des foyers",
+    "household_name": "Nom du responsable du foyer",
+    "address": "Adresse",
+    "type": "Type",
+    "date": "Date"
+  }
+}

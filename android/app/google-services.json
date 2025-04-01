@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "179148937898",
+    "project_id": "rchitecture-4bb9f",
+    "storage_bucket": "rchitecture-4bb9f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:179148937898:android:b42c105377da5a19504ed3",
+        "android_client_info": {
+          "package_name": "com.example.demo_architecture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAN5Vafmx6fhhWX9If5uYJuzrAR2SYcWBY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
