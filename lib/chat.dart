@@ -119,10 +119,6 @@ class Chat {
       if (phoneNumber != null) {
         await ChatConnection.checkUserToken();
         resultOpen = await onOpenChatScreen(phoneNumber, context);
-        if (resultOpen == false) {
-          print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ $resultOpen');
-          return false;
-        }
       } else {
         await Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
@@ -137,7 +133,7 @@ class Chat {
       loginError(context);
     }
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ $resultOpen');
-    return result;
+    return resultOpen;
   }
 
   static Future<bool> onOpenChatScreen(
@@ -149,7 +145,7 @@ class Chat {
       );
       if (response!.error == 1) {
         print(
-            '__________________ ChatHub: Không có account zalo ____________________');
+            '__________________ ChatHub: Không có account zalo getRoomByRoomId ${response.data!.room_id}____________________');
         return false;
       } else {
         ChatMessage? chat = await ChatConnection.joinRoom(
