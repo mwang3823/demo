@@ -876,8 +876,9 @@ class _ConversationInformationScreenState
                             },
                           );
                         } else {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return Center(
+                              child: Text(
+                                  AppLocalizations.text(LangKey.no_title)));
                         }
                       },
                     ),
@@ -1095,22 +1096,23 @@ class _ConversationInformationScreenState
                 bool isLoading = false; // Trạng thái loading cho nút "Tóm tắt"
                 // Lấy nội dung tóm tắt từ session hoặc snapshot
 
-                String summaryText =
-                    session.summary ?? summarySnapshot.data?.summary ?? '';
+                // String summaryText =
+                //     session.summary ?? summarySnapshot.data?.summary ?? '';
+                String summaryText = summarySnapshot.hasData
+                    ? summarySnapshot.data?.summary ?? ''
+                    : session.summary ?? '';
+
+                print(
+                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@summaryText $summaryText ');
+                print(
+                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@summarySnapshot.data?.summary ${summarySnapshot.data?.summary} ');
+                print(
+                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@session.summary ${session.summary} ');
                 // Nội dung tab tóm tắt
                 final summaryContent = Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Hiển thị loading khi stream đang chờ dữ liệu
-                    if (summarySnapshot.connectionState ==
-                        ConnectionState.waiting)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, right: 10),
-                        child: Center(
-                            child: Text(
-                                AppLocalizations.text(LangKey.no_summary))),
-                      )
-                    else if (summarySnapshot.hasError)
+                    if (summarySnapshot.hasError)
                       Text(
                         AppLocalizations.text(LangKey.load_summary_error),
                         style: TextStyle(color: Colors.red),
@@ -1119,8 +1121,17 @@ class _ConversationInformationScreenState
                       Column(
                         children: extractSummaryWidgetsFromHtml(summaryText),
                       )
+                    else if (summarySnapshot.connectionState ==
+                        ConnectionState.waiting)
+                      Text(AppLocalizations.text(LangKey.no_summary))
                     else
-                      const CircularProgressIndicator(),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, right: 10),
+                        child: Center(
+                          child:
+                              Text(AppLocalizations.text(LangKey.no_summary)),
+                        ),
+                      ),
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1199,9 +1210,9 @@ class _ConversationInformationScreenState
                           Tab(
                               text:
                                   AppLocalizations.text(LangKey.chat_summary)),
-                          Tab(
-                              text:
-                                  AppLocalizations.text(LangKey.chat_messages)),
+                          // Tab(
+                          //     text:
+                          //         AppLocalizations.text(LangKey.chat_messages)),
                         ],
                       ),
                       Expanded(

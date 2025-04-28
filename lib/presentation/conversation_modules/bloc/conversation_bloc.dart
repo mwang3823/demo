@@ -54,15 +54,19 @@ class ConversationBloc extends BaseBloc {
     try {
       final response =
           await ChatConnection.getSession(roomId, limit: limit, offset: offset);
-      _session.add(response);
+      print(
+          '@@@@@@@@@@@@@@@@@@@@@@@@getSession ${response[1].summary} @@@@@@@@@@@@@@@@@@@@@@@@getSession ');
+      _session.sink.add(response);
     } catch (_) {}
   }
 
   Future<void> getSummary(String sessionId) async {
     try {
       final response = await ChatConnection.getSummary(sessionId);
+      print(
+          '@@@@@@@@@@@@@@@@@@@@@@@@getSummary $response @@@@@@@@@@@@@@@@@@@@@@@@getSummary ');
       if (response != null) {
-        _summary.add(response);
+        _summary.sink.add(response);
       }
     } catch (_) {}
   }
