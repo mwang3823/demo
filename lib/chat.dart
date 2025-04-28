@@ -104,8 +104,8 @@ class Chat {
     if (result) {
       if (phoneNumber != null) {
         await ChatConnection.checkUserToken();
-        final result = await onOpenChatScreen(phoneNumber, context);
-        return result;
+        resultOpen = await onOpenChatScreen(phoneNumber, context);
+        if (resultOpen == false) return false;
       } else {
         await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
             builder: (context) => AppChat(email: email, password: password),
@@ -116,7 +116,8 @@ class Chat {
     } else {
       loginError(context);
     }
-    return true;
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ $resultOpen');
+    return result;
   }
 
   static Future showLoading(BuildContext context) async {
@@ -170,12 +171,13 @@ class Chat {
 Future<bool> onOpenChatScreen(String phoneNumber, BuildContext context) async {
   try {
     // Gọi API lấy thông tin phòng chat
-    final RoomInfoResponse? response =
+    final RoomResponse? response =
         await ChatConnection.getRoomByRoomId(phoneNumber);
-    if (response == null) {
+    if (response!.error == 1) {
       return false;
     } else {
-      ChatMessage? chat = await ChatConnection.joinRoom(response.room_id!);
+      ChatMessage? chat =
+          await ChatConnection.joinRoom(response.data!.room_id!);
       if (chat?.room != null) {
         await Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
@@ -187,6 +189,7 @@ Future<bool> onOpenChatScreen(String phoneNumber, BuildContext context) async {
         );
       }
       debugPrintRoom(chat!.room!);
+      return true;
     }
   } catch (e) {
     print('Error: $e');
@@ -300,20 +303,3 @@ class AppChat extends StatelessWidget {
     return const HomeScreen();
   }
 }
-
-// class RoomChat extends StatelessWidget {
-//   final String? email;
-//   final String? password;
-//   const AppChat({Key? key, required this.email, required this.password})
-//       : super(key: key);
-//   @override
-//   Widget build(BuildContext context) {
-//     if (Platform.isAndroid) {
-//       SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-//         statusBarColor: Colors.white,
-//         statusBarBrightness: Brightness.dark,
-//       ));
-//     }
-//     return const HomeScreen();
-//   }
-// }

@@ -915,24 +915,20 @@ class ChatConnection {
   }
 
   //get roomId by phone number
-  static Future<RoomInfoResponse?> getRoomByRoomId(String customerPhone) async {
+  static Future<RoomResponse?> getRoomByRoomId(String customerPhone) async {
     String url = 'public/zalo-personal/redirect-to-room';
     Map<String, dynamic> json = {
       'customer_phone': customerPhone,
     };
-
     try {
       ResponseData response =
           await connection.post(url, json, isJoinByNumberPhone: true);
-      if (response.isSuccess) {
-        final data = RoomInfoResponse.fromJson(response.data['data']);
-        return data;
-      }
+      final data = RoomResponse.fromJson(response.data);
+      return data;
     } catch (e) {
-      print("Lỗi get ConversationSummaryModel: $e");
+      print("Error in getRoomByRoomId: $e");
       return null;
     }
-    return null;
   }
 
   ///Tin nhắn định kỳ, Tin nhắn marketing, Cấu hình tin gửi_____________________
