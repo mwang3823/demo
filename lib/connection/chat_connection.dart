@@ -256,15 +256,19 @@ class ChatConnection {
   static Future<c.ChatMessage?> joinRoom(String id,
       {bool refresh = false}) async {
     // String version = ChatConnection.isChatHub ? '/v3' : '';// Lỗi chat 404
-    String version = '/v3';
-    ResponseData responseData =
-        await connection.post('api$version/join-room', {'id': id});
-    if (responseData.isSuccess) {
-      if (!refresh) {
-        streamSocket.joinRoom(id);
+    try {
+      String version = '/v3';
+      ResponseData responseData =
+          await connection.post('api$version/join-room', {'id': id});
+      if (responseData.isSuccess) {
+        if (!refresh) {
+          streamSocket.joinRoom(id);
+        }
+        await autoUpdateChatSeenWhenJoinRoom(id);
+        return c.ChatMessage.fromJson(responseData.data);
       }
-      await autoUpdateChatSeenWhenJoinRoom(id);
-      return c.ChatMessage.fromJson(responseData.data);
+    } catch (_) {
+      return null;
     }
     return null;
   }
@@ -926,6 +930,7 @@ class ChatConnection {
       }
     } catch (e) {
       print("Lỗi get ConversationSummaryModel: $e");
+      return null;
     }
     return null;
   }

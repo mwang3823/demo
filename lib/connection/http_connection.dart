@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class HTTPConnection {
   // static String domain = 'https://chat-stag.epoints.vn/';
   static String domain = 'https://chathub.epoints.vn/';
-  static String apiKeyJoinChat = '62da77474991df7aa711a632';
+  static String apiKeyGetRoom = '62da77474991df7aa711a632';
   Future<ResponseData> upload(String path, File file,
       {bool isImage = false}) async {
     final uri = Uri.parse('$domain$path');
@@ -60,9 +60,7 @@ class HTTPConnection {
     if (ChatConnection.user != null) {
       headers['Authorization'] = 'Bearer ${ChatConnection.user!.token}';
       headers['uid'] = ChatConnection.uid.toString();
-    }
-    if (isJoinByNumberPhone) {
-      headers['api-key'] = apiKeyJoinChat;
+      headers['api-key'] = apiKeyGetRoom;
     }
     if (ChatConnection.brandCode != null) {
       headers['brand-code'] = ChatConnection.brandCode!;

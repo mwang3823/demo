@@ -137,7 +137,7 @@ class _MyAppState extends State<MyApp> {
                   }
 
                   await Chat.open(
-                      roomId: '6800d78f695ec50012f6eef4',
+                      phoneNumber: '+84906886627',
                       '',
                       context,
                       _userNameController.value.text,

@@ -42,7 +42,7 @@ class Chat {
     ChatConnection.dispose(isDispose: true);
   }
 
-  static open(
+  static Future<bool> open(
     String? userId,
     BuildContext context,
     String email,
@@ -53,7 +53,7 @@ class Chat {
     String? token,
     String? brandCode,
     bool isChatHub = false,
-    String? roomId,
+    String? phoneNumber,
     Map<String, dynamic>? notificationData,
     List<Map<String, dynamic>>? addOnModules,
     Function? searchProducts,
@@ -68,6 +68,7 @@ class Chat {
     Function? editCustomerLead,
     Function? openChatGPT,
   }) async {
+    bool resultOpen = true;
     showLoading(context);
     await initializeDateFormatting();
     if (domain != null) {
@@ -101,8 +102,10 @@ class Chat {
     Navigator.of(context).pop();
     ScreenInfo.initialize(MediaQuery.of(context));
     if (result) {
-      if (roomId != null) {
-        await onOpenChatScreen(roomId, context);
+      if (phoneNumber != null) {
+        await ChatConnection.checkUserToken();
+        final result = await onOpenChatScreen(phoneNumber, context);
+        return result;
       } else {
         await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
             builder: (context) => AppChat(email: email, password: password),
@@ -113,6 +116,7 @@ class Chat {
     } else {
       loginError(context);
     }
+    return true;
   }
 
   static Future showLoading(BuildContext context) async {
@@ -163,44 +167,32 @@ class Chat {
   }
 }
 
-Future<void> onOpenChatScreen(String roomId, BuildContext context) async {
-  // //, BuildContext context
-  // RoomInfoResponse? roomInfo =
-  //     await ChatConnection.getRoomByRoomId(phoneNumber);
-  ChatMessage? chat = await ChatConnection.joinRoom(roomId);
-  debugPrintRoom(chat!.room!);
-  await ChatConnection.checkUserToken();
-  if (chat!.room != null) {
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-          builder: (context) => ChatScreen(
-                data: r.Rooms.mappingFromRoom(chat.room!),
-              ),
-          settings: const RouteSettings(name: 'chat_screen')),
-    );
+Future<bool> onOpenChatScreen(String phoneNumber, BuildContext context) async {
+  try {
+    // Gọi API lấy thông tin phòng chat
+    final RoomInfoResponse? response =
+        await ChatConnection.getRoomByRoomId(phoneNumber);
+    if (response == null) {
+      return false;
+    } else {
+      ChatMessage? chat = await ChatConnection.joinRoom(response.room_id!);
+      if (chat?.room != null) {
+        await Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              data: r.Rooms.mappingFromRoom(chat!.room!),
+            ),
+            settings: const RouteSettings(name: 'chat_screen'),
+          ),
+        );
+      }
+      debugPrintRoom(chat!.room!);
+    }
+  } catch (e) {
+    print('Error: $e');
+    return false;
   }
-  //Chuyển qua màn hình chat
-  // await Navigator.of(context, rootNavigator: true).push(
-  //   MaterialPageRoute(
-  //       builder: (context) => ChatScreen(
-  //             data: room,
-  //             source: room.source,
-  //           ),
-  //       settings: const RouteSettings(name: 'chat_screen')),
-  // );
-
-  // roomListData = await ChatConnection.roomList(
-  //   source: widget.source,
-  //   channelId: channel,
-  //   status: status,
-  //   tagIds: tagIds,
-  //   page: page,
-  //   roomData: roomListData,
-  //   link_status: link_status,
-  //   isGroup: isGroup,
-  //   endDate: endDay,
-  //   startDate: startDay,
-  // );
+  return false;
 }
 
 void debugPrintRoom(Room room) {
