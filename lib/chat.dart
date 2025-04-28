@@ -143,6 +143,8 @@ class Chat {
       final RoomResponse? response = await ChatConnection.getRoomByRoomId(
         phoneNumber,
       );
+      print(
+          '__________________ ChatHub: Không có account zalo getRoomByRoomId____________________');
       if (response!.error == 1) {
         print(
             '__________________ ChatHub: Không có account zalo getRoomByRoomId ${response.data!.room_id}____________________');
