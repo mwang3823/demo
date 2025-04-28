@@ -137,8 +137,8 @@ class _MyAppState extends State<MyApp> {
                   }
 
                   await Chat.open(
-                      // phoneNumber: '+84906886627',
-                      phoneNumber: '+8490688627',
+                      phoneNumber: '070898343',
+                      // phoneNumber: '+8490688627',
                       '',
                       context,
                       _userNameController.value.text,

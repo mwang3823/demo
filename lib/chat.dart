@@ -24,14 +24,22 @@ class Chat {
   }
 
   static Future<String?> chatToken(
-      String email, String password, String domain) async {
+    String email,
+    String password,
+    String domain,
+  ) async {
     HTTPConnection.domain = domain;
     return await ChatConnection.token(email, password);
   }
 
   static Future<bool> connectSocket(
-      BuildContext context, String email, String password, String appIcon,
-      {String? domain, String? token}) async {
+    BuildContext context,
+    String email,
+    String password,
+    String appIcon, {
+    String? domain,
+    String? token,
+  }) async {
     ChatConnection.buildContext = context;
     ChatConnection.appIcon = appIcon;
     bool result = await ChatConnection.init(email, password, token: token);
@@ -97,19 +105,31 @@ class Chat {
       ChatConnection.initialData = notificationData;
     }
     AppLocalizations(ChatConnection.locale).load();
-    bool result = await connectSocket(context, email, password, appIcon,
-        domain: domain, token: token);
+    bool result = await connectSocket(
+      context,
+      email,
+      password,
+      appIcon,
+      domain: domain,
+      token: token,
+    );
     Navigator.of(context).pop();
     ScreenInfo.initialize(MediaQuery.of(context));
     if (result) {
       if (phoneNumber != null) {
         await ChatConnection.checkUserToken();
         resultOpen = await onOpenChatScreen(phoneNumber, context);
-        if (resultOpen == false) return false;
+        if (resultOpen == false) {
+          print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ $resultOpen');
+          return false;
+        }
       } else {
-        await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        await Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(
             builder: (context) => AppChat(email: email, password: password),
-            settings: const RouteSettings(name: 'home_screen')));
+            settings: const RouteSettings(name: 'home_screen'),
+          ),
+        );
 
         ChatConnection.dispose(isDispose: true);
       }
@@ -120,23 +140,57 @@ class Chat {
     return result;
   }
 
+  static Future<bool> onOpenChatScreen(
+      String phoneNumber, BuildContext context) async {
+    try {
+      // Gọi API lấy thông tin phòng chat
+      final RoomResponse? response = await ChatConnection.getRoomByRoomId(
+        phoneNumber,
+      );
+      if (response!.error == 1) {
+        print(
+            '__________________ ChatHub: Không có account zalo ____________________');
+        return false;
+      } else {
+        ChatMessage? chat = await ChatConnection.joinRoom(
+          response.data!.room_id!,
+        );
+        if (chat?.room != null) {
+          await Navigator.of(context, rootNavigator: true).push(
+            MaterialPageRoute(
+              builder: (context) =>
+                  ChatScreen(data: r.Rooms.mappingFromRoom(chat!.room!)),
+              settings: const RouteSettings(name: 'chat_screen'),
+            ),
+          );
+        }
+        print('__________________ ChatHub: TRUE ____________________');
+        return true;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return false;
+    }
+  }
+
   static Future showLoading(BuildContext context) async {
     return await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return SimpleDialog(
-            elevation: 0.0,
-            backgroundColor: Colors.transparent,
-            children: <Widget>[
-              Center(
-                child: Platform.isAndroid
-                    ? const CircularProgressIndicator()
-                    : const CupertinoActivityIndicator(),
-              )
-            ],
-          );
-        });
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          elevation: 0.0,
+          backgroundColor: Colors.transparent,
+          children: <Widget>[
+            Center(
+              child: Platform.isAndroid
+                  ? const CircularProgressIndicator()
+                  : const CupertinoActivityIndicator(),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   static openNotification(Map<String, dynamic> notificationData) {
@@ -158,133 +212,15 @@ class Chat {
         content: Text(AppLocalizations.text(LangKey.accountLoginError)),
         actions: [
           ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(AppLocalizations.text(LangKey.accept)))
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(AppLocalizations.text(LangKey.accept)),
+          ),
         ],
       ),
     );
   }
-}
-
-Future<bool> onOpenChatScreen(String phoneNumber, BuildContext context) async {
-  try {
-    // Gọi API lấy thông tin phòng chat
-    final RoomResponse? response =
-        await ChatConnection.getRoomByRoomId(phoneNumber);
-    if (response!.error == 1) {
-      return false;
-    } else {
-      ChatMessage? chat =
-          await ChatConnection.joinRoom(response.data!.room_id!);
-      if (chat?.room != null) {
-        await Navigator.of(context, rootNavigator: true).push(
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              data: r.Rooms.mappingFromRoom(chat!.room!),
-            ),
-            settings: const RouteSettings(name: 'chat_screen'),
-          ),
-        );
-      }
-      debugPrintRoom(chat!.room!);
-      return true;
-    }
-  } catch (e) {
-    print('Error: $e');
-    return false;
-  }
-  return false;
-}
-
-void debugPrintRoom(Room room) {
-  print('#################### ROOM INFO ####################');
-  print('sId: ${room.sId}');
-  print('isGroup: ${room.isGroup}');
-  print('lastUpdate: ${room.lastUpdate}');
-  print('lastAuthor: ${room.lastAuthor}');
-  print('lastMessage: ${room.lastMessage}');
-
-  // In owner
-  if (room.owner != null) {
-    print('Owner:');
-    print('  isBlocked: ${room.owner!.isBlocked}');
-    print(
-        '  ...other owner fields...'); // Bạn thêm nếu Owner có nhiều field khác
-  } else {
-    print('Owner: null');
-  }
-
-  // In people
-  if (room.people != null && room.people!.isNotEmpty) {
-    print('People:');
-    for (var p in room.people!) {
-      print(
-          '  Person: $p'); // Bạn có thể print p.name, p.id nếu People có field cụ thể
-    }
-  } else {
-    print('People: null or empty');
-  }
-
-  // In messages
-  if (room.messages != null && room.messages!.isNotEmpty) {
-    print('Messages:');
-    for (var m in room.messages!) {
-      print('  Message: $m');
-    }
-  } else {
-    print('Messages: null or empty');
-  }
-
-  // In messageSeen
-  if (room.messageSeen != null && room.messageSeen!.isNotEmpty) {
-    print('MessageSeen:');
-    for (var ms in room.messageSeen!) {
-      print('  Seen: $ms');
-    }
-  } else {
-    print('MessageSeen: null or empty');
-  }
-
-  // In images
-  if (room.images != null && room.images!.isNotEmpty) {
-    print('Images:');
-    for (var img in room.images!) {
-      print('  Image: $img');
-    }
-  } else {
-    print('Images: null or empty');
-  }
-
-  // In files
-  if (room.files != null && room.files!.isNotEmpty) {
-    print('Files:');
-    for (var f in room.files!) {
-      print('  File: $f');
-    }
-  } else {
-    print('Files: null or empty');
-  }
-
-  // In links
-  if (room.links != null && room.links!.isNotEmpty) {
-    print('Links:');
-    for (var l in room.links!) {
-      print('  Link: $l');
-    }
-  } else {
-    print('Links: null or empty');
-  }
-
-  // In pinMessage
-  if (room.pinMessage != null) {
-    print('PinMessage: ${room.pinMessage}');
-  } else {
-    print('PinMessage: null');
-  }
-
-  print('###################################################');
 }
 
 class AppChat extends StatelessWidget {
@@ -295,10 +231,12 @@ class AppChat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
-        statusBarBrightness: Brightness.dark,
-      ));
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.white,
+          statusBarBrightness: Brightness.dark,
+        ),
+      );
     }
     return const HomeScreen();
   }
