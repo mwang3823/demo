@@ -1,0 +1,149 @@
+import 'dart:io';
+import 'package:chat/chat_screen/media_screen.dart';
+import 'package:chat/chat_ui/widgets/photo_view.dart';
+import 'package:chat/connection/chat_connection.dart';
+import 'package:chat/localization/app_localizations.dart';
+import 'package:chat/localization/lang_key.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:mime/mime.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io' as io;
+
+import 'package:saver_gallery/saver_gallery.dart';
+
+Future<String?> download(BuildContext context,String url,String filename, {bool isSaveGallery = false}) async {
+  try {
+    bool granted = false;
+    if (Platform.isAndroid) {
+      granted = await Permission.storage.request().isGranted;
+    }
+    else {
+      granted = true;
+    }
+    if(!granted) {
+      return null;
+    }
+    Directory? directory;
+    if (Platform.isIOS) {
+      directory = await getApplicationDocumentsDirectory();
+    } else if (Platform.isAndroid) {
+      directory = await getTemporaryDirectory();
+    }
+    if (directory != null) {
+      var uri = Uri.encodeComponent(filename);
+      String urlPath = '${directory.path}/$uri';
+      bool checkAvailable = await io.File(urlPath).exists();
+      if(checkAvailable) {
+        if(isSaveGallery) saveGallery(urlPath, filename);
+        return urlPath;
+      }
+      await Dio().download(
+        url,
+        urlPath,
+        options: Options(
+          headers: {
+            'brand-code' : ChatConnection.brandCode!,
+            'Authorization':'Bearer ${ChatConnection.user!.token}'
+          },
+        ),
+      );
+      if (Platform.isAndroid) {
+        final params = SaveFileDialogParams(
+            sourceFilePath: urlPath);
+        final filePath =
+        await FlutterFileDialog.saveFile(params: params);
+        if(isSaveGallery) saveGallery(filePath, filename);
+        return filePath;
+      }
+      else {
+        if(isSaveGallery) saveGallery(urlPath, filename);
+        return urlPath;
+      }
+    }
+    else {
+      return null;
+    }
+  }catch(_) {
+    return null;
+  }
+}
+
+void saveGallery(String? path, String filename) {
+  if(path != null) {
+    if(isImage(path)) {
+      final file = io.File(path);
+      SaverGallery.saveImage(file.readAsBytesSync(), fileName: filename, skipIfExists: false).then((result) {
+        if(result.isSuccess) {
+          ScaffoldMessenger.of(ChatConnection.buildContext).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.text(LangKey.downloadSuccess)),duration: const Duration(seconds: 2),));
+        }
+        else {
+          ScaffoldMessenger.of(ChatConnection.buildContext).showSnackBar(SnackBar(
+            content: Text("${AppLocalizations.text(LangKey.downloadFailed)}: ${result.errorMessage}"),duration: const Duration(seconds: 2),));
+        }
+      });
+    }
+    else if(isVideo(path)) {
+      SaverGallery.saveFile(filePath: path, fileName: filename, skipIfExists: false).then((result) {
+        if(result.isSuccess) {
+          ScaffoldMessenger.of(ChatConnection.buildContext).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.text(LangKey.downloadSuccess)),duration: const Duration(seconds: 2),));
+        }
+        else {
+          ScaffoldMessenger.of(ChatConnection.buildContext).showSnackBar(SnackBar(
+            content: Text("${AppLocalizations.text(LangKey.downloadFailed)}: ${result.errorMessage}"),duration: const Duration(seconds: 2),));
+        }
+      });
+    }
+  }
+}
+
+bool isImage(String path) {
+  final mimeType = lookupMimeType(path) ?? '';
+  bool result = mimeType.startsWith('image/') || path == 'image/';
+  if(path.contains('jfif')) {
+    result = true;
+  }
+  return result;
+}
+bool isAudio(String path) {
+  final mimeType = lookupMimeType(path) ?? '';
+  return mimeType.startsWith('audio/');
+}
+bool isVideo(String path) {
+  final mimeType = lookupMimeType(path) ?? '';
+  return mimeType.startsWith('video/');
+}
+
+void openFile(String? result,BuildContext context,String fileName) async {
+  if(result != null) {
+    final mimeType = fileName.split('.').last.toLowerCase();
+    if(isAudio(mimeType)) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+        return MediaScreen(filePath: result,title: fileName);
+      }));
+    }
+    else if(isVideo(mimeType)) {
+      await OpenFilex.open(result);
+    }
+    else if(isImage(mimeType)) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+        return PhotoScreen(imageViewed: result);
+      }));
+    }
+    else {
+      await OpenFilex.open(result);
+    }
+  }
+  return null;
+}
+
+void openImage(BuildContext context, String url) {
+  Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+    return PhotoScreen(imageViewed: url);
+  }));
+}
