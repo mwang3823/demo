@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:adaptive_dialog/adaptive_dialog.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat/chat_screen/forward_screen.dart';
+import 'package:chat/chat_screen/select_tags.dart';
 import 'package:chat/chat_ui/flutter_chat_ui.dart';
 import 'package:chat/connection/app_lifecycle.dart';
 import 'package:chat/connection/chat_connection.dart';
@@ -120,6 +122,7 @@ class _ChatScreenState extends AppLifeCycle<ChatScreen> {
     tag = await ChatConnection.getTagList();
     String chatPartnerId = (widget.data.owner!.sId!);
     tagByUser = await ChatConnection.getTagListByUser(chatPartnerId);
+    setState(() {});
   }
 
   void _addMessage(types.Message message, String id,
@@ -880,6 +883,138 @@ class _ChatScreenState extends AppLifeCycle<ChatScreen> {
     return null;
   }
 
+  // void showChooseDialog(
+  //   BuildContext context,
+  //   List<Data> items,
+  //   Future<void> Function(List<Data>) onSave,
+  // ) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return StatefulBuilder(
+  //         builder: (context, setState) {
+  //           return AlertDialog(
+  //             backgroundColor: Colors.white,
+  //             content: Container(
+  //               width: MediaQuery.of(context).size.width * 0.95,
+  //               height: (MediaQuery.of(context).size.height * 0.7),
+  //               child: Column(
+  //                 children: [
+  //                   Center(
+  //                     child: AutoSizeText(
+  //                       AppLocalizations.text(LangKey.select_tags),
+  //                       minFontSize: 16,
+  //                       maxFontSize: 24,
+  //                     ),
+  //                   ),
+  //                   SizedBox(
+  //                     height: 5,
+  //                   ),
+  //                   Expanded(
+  //                     child: SizedBox(
+  //                       width: MediaQuery.of(context).size.width * 0.9,
+  //                       // height: (MediaQuery.of(context).size.height * 0.55),
+  //                       child: ListView.builder(
+  //                         // shrinkWrap: true,
+  //                         itemCount: items.length,
+  //                         itemBuilder: (context, index) {
+  //                           final Data item = items[index];
+  //                           return GestureDetector(
+  //                             onTap: () {
+  //                               setState(() {
+  //                                 item.isActive = !item.isActive;
+  //                               });
+  //                             },
+  //                             child: Container(
+  //                               margin: const EdgeInsets.symmetric(vertical: 4),
+  //                               padding: const EdgeInsets.all(12),
+  //                               decoration: BoxDecoration(
+  //                                 color: item.isActive
+  //                                     ? Colors.blue.shade700
+  //                                     : Colors.grey.shade200,
+  //                                 borderRadius: BorderRadius.circular(8),
+  //                               ),
+  //                               child: Text(
+  //                                 item.name ?? '',
+  //                                 style: TextStyle(
+  //                                   color: item.isActive
+  //                                       ? Colors.white
+  //                                       : Colors.black,
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           );
+  //                         },
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   SizedBox(
+  //                     height: 10,
+  //                   ),
+  //                   Center(
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.center,
+  //                       children: [
+  //                         InkWell(
+  //                           onTap: () => Navigator.pop(context),
+  //                           child: Container(
+  //                             padding: const EdgeInsets.symmetric(
+  //                                 horizontal: 16, vertical: 10),
+  //                             decoration: BoxDecoration(
+  //                               color: Colors.white,
+  //                               border: Border.all(
+  //                                   color: HexColor.fromHex('#0067AC')),
+  //                               borderRadius: BorderRadius.circular(10),
+  //                             ),
+  //                             child: Text(
+  //                               AppLocalizations.text(LangKey.close),
+  //                               style: TextStyle(
+  //                                 color: HexColor.fromHex('#0067AC'),
+  //                                 fontWeight: FontWeight.bold,
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                         const SizedBox(width: 5),
+  //                         InkWell(
+  //                           onTap: () async {
+  //                             showLoading();
+  //                             final selectedItems = items
+  //                                 .where((e) => e.isActive == true)
+  //                                 .toList();
+  //                             await onSave(selectedItems);
+  //                             Navigator.of(context).pop();
+  //                             Navigator.of(context).pop();
+  //                           },
+  //                           child: Container(
+  //                             padding: const EdgeInsets.symmetric(
+  //                                 horizontal: 16, vertical: 10),
+  //                             decoration: BoxDecoration(
+  //                               color: HexColor.fromHex('#0067AC'),
+  //                               borderRadius: BorderRadius.circular(10),
+  //                             ),
+  //                             child: Text(
+  //                               AppLocalizations.text(LangKey.update),
+  //                               style: TextStyle(
+  //                                 color: Colors.white,
+  //                                 fontWeight: FontWeight.bold,
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   )
+  //                 ],
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+
   bool isShowUserTag = true;
   @override
   Widget build(BuildContext context) {
@@ -961,26 +1096,99 @@ class _ChatScreenState extends AppLifeCycle<ChatScreen> {
                                       children: tagByUser!.data!
                                           .map((e) => _tagChip(e))
                                           .toList()))),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 5.0),
-                        child: InkWell(
-                          splashColor: Colors.transparent,
-                          onTap: () {
-                            setState(() {
-                              isShowUserTag = !isShowUserTag;
-                            });
-                          },
-                          child: Container(
-                              color: Colors.white,
-                              constraints: const BoxConstraints(minHeight: 30),
-                              child: Icon(
-                                isShowUserTag
-                                    ? Icons.remove_red_eye
-                                    : Icons.remove_red_eye_outlined,
-                                color: Colors.grey,
-                              )),
-                        ),
-                      )
+                      Row(
+                        children: [
+                          isShowUserTag
+                              ? Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 5.0, right: 5.0, bottom: 5.0),
+                                  child: Container(
+                                    // height: 30.0,
+                                    decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: HexColor.fromHex('#0067AC')),
+                                        color: Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(10.0)),
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  SelectTagsScreen(
+                                                items: tagByUser!.data ?? [],
+                                                onSave: (selectedItems) async {
+                                                  List<String> selectedIds =
+                                                      selectedItems
+                                                          .where((e) =>
+                                                              e.sId !=
+                                                              null) // Đảm bảo không null
+                                                          .map((e) => e.sId!)
+                                                          .toList();
+                                                  await ChatConnection
+                                                      .updateTag(
+                                                          selectedIds,
+                                                          widget.data.owner!
+                                                              .sId!);
+                                                  _getTagList();
+                                                },
+                                              ),
+                                            ));
+                                        // showChooseDialog(
+                                        //     context, tagByUser!.data ?? [],
+                                        //     (selectedItems) async {
+                                        //   // Lấy list các sId
+                                        //   List<String> selectedIds =
+                                        //       selectedItems
+                                        //           .where((e) =>
+                                        //               e.sId !=
+                                        //               null) // Đảm bảo không null
+                                        //           .map((e) => e.sId!)
+                                        //           .toList();
+                                        //   await ChatConnection.updateTag(
+                                        //       selectedIds,
+                                        //       widget.data.owner!.sId!);
+                                        //   _getTagList();
+                                        // });
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 5.0,
+                                            left: 5.0,
+                                            right: 5.0,
+                                            bottom: 5),
+                                        child: Icon(
+                                          Icons.add,
+                                          color: HexColor.fromHex('#0067AC'),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 5.0),
+                            child: InkWell(
+                              splashColor: Colors.transparent,
+                              onTap: () {
+                                setState(() {
+                                  isShowUserTag = !isShowUserTag;
+                                });
+                              },
+                              child: Container(
+                                  color: Colors.white,
+                                  constraints:
+                                      const BoxConstraints(minHeight: 30),
+                                  child: Icon(
+                                      isShowUserTag
+                                          ? Icons.remove_red_eye
+                                          : Icons.remove_red_eye_outlined,
+                                      color: HexColor.fromHex('#0067AC'))),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

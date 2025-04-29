@@ -193,6 +193,6 @@
   "chat_session_info": "Chat session information",
   "chat_summary": "Summary content",
   "chat_messages": "Chat messages",
-  "close": "Close"
-
+  "close": "Close",
+  "select_tags":"'Select Tags"
 }

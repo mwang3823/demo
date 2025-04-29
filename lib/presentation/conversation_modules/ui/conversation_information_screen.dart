@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat/chat_ui/hex_color.dart';
@@ -17,13 +16,10 @@ import 'package:chat/presentation/conversation_modules/bloc/conversation_bloc.da
 import 'package:chat/presentation/utils/media_query.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../../../chat_screen/chat_group_members_screen.dart';
 import '../../../chat_screen/conversation_file_screen.dart';
 import '../../../data_model/room.dart';
 import '../../../data_model/session.dart';
-import '../../../data_model/summary.dart';
-import '../../note_modules/bloc/create_note_bloc.dart';
 import '../../note_modules/ui/create_note_screen.dart';
 import '../../utils/dialog.dart';
 import '../../utils/formatter.dart';
@@ -245,7 +241,6 @@ class _ConversationInformationScreenState
                   color: const Color(0xFFE5E5E5),
                 ),
               ),
-            if (!ChatConnection.isChatHub) actionView(),
             if (!isInitScreen &&
                 customerAccount?.data?.type == null &&
                 ChatConnection.isChatHub)
@@ -898,21 +893,13 @@ class _ConversationInformationScreenState
       child: StreamBuilder<List<SessionModel>>(
         stream: _bloc.sessionStream,
         builder: (context, snapshot) {
-          // Hiển thị loading khi stream đang chờ dữ liệu
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: Text('Phiên chat chưa có nội dung tóm tắt'));
+            return Center(
+                child: Text(AppLocalizations.text(LangKey.no_summary)));
           }
-
-          // Nếu stream có lỗi
-          if (snapshot.hasError) {
-            return const Center(
-                child: Text('Đã xảy ra lỗi khi tải dữ liệu phiên chat'));
-          }
-
-          // Nếu không có dữ liệu
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Không có phiên chat nào'));
+            return Center(
+                child: Text(AppLocalizations.text(LangKey.no_chat_session)));
           }
 
           final sessions = snapshot.data!;
@@ -929,11 +916,8 @@ class _ConversationInformationScreenState
                 () {
                   showDialog(
                     context: context,
-                    builder: (context) => buildChatSessionDialog(
-                      context: context,
-                      session: session,
-                      bloc: _bloc,
-                    ),
+                    builder: (context) =>
+                        buildChatSessionDialog(session: session, index: index),
                   );
                 },
               );
@@ -1075,14 +1059,12 @@ class _ConversationInformationScreenState
   }
 
   Widget buildChatSessionDialog({
-    required BuildContext context,
     required SessionModel session,
-    required ConversationBloc bloc,
+    required int? index,
   }) {
     return StreamBuilder(
-      stream: bloc.summaryStream,
+      stream: _bloc.sessionStream,
       builder: (context, summarySnapshot) {
-        // Trạng thái loading cho nút "Tóm tắt"
         return Dialog(
           key: const Key('chat_session_dialog'),
           insetPadding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1093,21 +1075,8 @@ class _ConversationInformationScreenState
             length: 2,
             child: StatefulBuilder(
               builder: (context, setState) {
-                bool isLoading = false; // Trạng thái loading cho nút "Tóm tắt"
-                // Lấy nội dung tóm tắt từ session hoặc snapshot
-
-                // String summaryText =
-                //     session.summary ?? summarySnapshot.data?.summary ?? '';
-                String summaryText = summarySnapshot.hasData
-                    ? summarySnapshot.data?.summary ?? ''
-                    : session.summary ?? '';
-
-                print(
-                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@summaryText $summaryText ');
-                print(
-                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@summarySnapshot.data?.summary ${summarySnapshot.data?.summary} ');
-                print(
-                    '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@session.summary ${session.summary} ');
+                String summaryText =
+                    summarySnapshot.data![index!].summary ?? '';
                 // Nội dung tab tóm tắt
                 final summaryContent = Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1120,43 +1089,27 @@ class _ConversationInformationScreenState
                     else if (summaryText.trim().isNotEmpty)
                       Column(
                         children: extractSummaryWidgetsFromHtml(summaryText),
-                      )
-                    else if (summarySnapshot.connectionState ==
-                        ConnectionState.waiting)
-                      Text(AppLocalizations.text(LangKey.no_summary))
-                    else
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, right: 10),
-                        child: Center(
-                          child:
-                              Text(AppLocalizations.text(LangKey.no_summary)),
-                        ),
                       ),
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: InkWell(
-                        onTap: isLoading
-                            ? null // Vô hiệu hóa nút khi đang loading
-                            : () async {
-                                showLoading();
-                                try {
-                                  // Gọi API để lấy tóm tắt
-                                  await bloc.getSummary(session.id!);
-                                  Navigator.pop(context);
-                                } catch (e) {
-                                  // Hiển thị thông báo lỗi
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            '${AppLocalizations.text(LangKey.load_summary_failed)} $e')),
-                                  );
-                                } finally {
-                                  setState(() {
-                                    isLoading = false; // Ẩn loading
-                                  });
-                                }
-                              },
+                        onTap: () async {
+                          showLoading();
+                          try {
+                            // Gọi API để lấy tóm tắt
+                            await _bloc.getSummary(session.id!);
+                            await _bloc.getSession(widget.roomData.sId!);
+                            Navigator.pop(context);
+                          } catch (e) {
+                            // Hiển thị thông báo lỗi
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      '${AppLocalizations.text(LangKey.load_summary_failed)} $e')),
+                            );
+                          }
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
@@ -1166,16 +1119,10 @@ class _ConversationInformationScreenState
                           width: MediaQuery.of(context).size.width * 0.4,
                           height: 35,
                           child: Center(
-                            child: isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: Text(
-                                        '${AppLocalizations.text(LangKey.no_chat_session)}'))
-                                : Text(
-                                    AppLocalizations.text(LangKey.summary),
-                                    style: TextStyle(color: Colors.blue),
-                                  ),
+                            child: Text(
+                              AppLocalizations.text(LangKey.summary),
+                              style: TextStyle(color: Colors.blue),
+                            ),
                           ),
                         ),
                       ),
@@ -1202,33 +1149,12 @@ class _ConversationInformationScreenState
                       ),
                       const Divider(),
                       const SizedBox(height: 8),
-                      TabBar(
-                        indicatorColor: Colors.blue,
-                        labelColor: Colors.blue,
-                        unselectedLabelColor: Colors.grey,
-                        tabs: [
-                          Tab(
-                              text:
-                                  AppLocalizations.text(LangKey.chat_summary)),
-                          // Tab(
-                          //     text:
-                          //         AppLocalizations.text(LangKey.chat_messages)),
-                        ],
-                      ),
                       Expanded(
-                        child: TabBarView(
-                          children: [
-                            SingleChildScrollView(
-                              child: Padding(
-                                padding: const EdgeInsets.all(5.0),
-                                child: summaryContent,
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(5.0),
-                              child: Placeholder(), // Tab tin nhắn giữ nguyên
-                            ),
-                          ],
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: summaryContent,
+                          ),
                         ),
                       ),
                       const Divider(height: 1),
@@ -1260,182 +1186,177 @@ class _ConversationInformationScreenState
     return SingleChildScrollView(
       child: Column(
         children: [
-          Container(
+          SizedBox(
             height: 10,
           ),
-          InkWell(
+
+          ///Tra cứu sản phẩm
+          _actionButtonTile(
             onTap: () {
               if (ChatConnection.searchProducts != null) {
                 ChatConnection.searchProducts!();
               }
             },
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all(color: Colors.grey.shade400)),
-                height: 40.0,
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5.0,
-                    ),
-                    const Icon(
-                      Icons.search_outlined,
-                      color: Colors.blue,
-                    ),
-                    Container(
-                      width: 5.0,
-                    ),
-                    Expanded(
-                        child: AutoSizeText(
-                            AppLocalizations.text(LangKey.productSearch)))
-                  ],
-                ),
-              ),
-            ),
+            iconData: Icons.search_outlined,
+            title: AppLocalizations.text(LangKey.productSearch),
           ),
-          Container(
-            height: 10.0,
-          ),
-          InkWell(
+
+          /// Tra cứu đơn hàng
+          _actionButtonTile(
             onTap: () {
               if (ChatConnection.searchOrders != null) {
                 ChatConnection.searchOrders!();
               }
             },
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all(color: Colors.grey.shade400)),
-                height: 40.0,
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5.0,
-                    ),
-                    const Icon(
-                      Icons.search_outlined,
-                      color: Colors.blue,
-                    ),
-                    Container(
-                      width: 5.0,
-                    ),
-                    Expanded(
-                        child: AutoSizeText(
-                            AppLocalizations.text(LangKey.orderSearch)))
-                  ],
-                ),
-              ),
-            ),
+            iconData: Icons.search_outlined,
+            title: AppLocalizations.text(LangKey.orderSearch),
           ),
-          Container(
-            height: 10.0,
-          ),
-          //Các thao tác
-          InkWell(
-            onTap: () async {
-              // r.People info = getPeople(widget.roomData.people);
-              Map<String, dynamic>? result = await Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (ctx) {
-                return Container();
 
-                /// TEST ẩn tạm để test
-                // return ActionListUserChathubScreen(data: info, customerAccount: customerAccount);
-              }));
+          ///Các thao tác
+          _actionButtonTile(
+            onTap: () async {
+              Map<String, dynamic>? result = await Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => Container()),
+                // Lưu ý: Bạn có thể đổi lại thành màn hình ActionListUserChathubScreen sau.
+              );
               if (result != null) {
                 showLoading();
-                // r.People info = getPeople(widget.roomData.people);
                 await ChatConnection.customerLink(
-                    widget.roomData.sId ?? '',
-                    result['customerId'],
-                    result['customerLeadId'],
-                    result['type'],
-                    customerAccount?.data?.mappingId ?? '');
+                  widget.roomData.sId ?? '',
+                  result['customerId'],
+                  result['customerLeadId'],
+                  result['type'],
+                  customerAccount?.data?.mappingId ?? '',
+                );
                 Navigator.of(context).pop();
                 isShowListSearch = false;
                 customerAccountSearch = null;
                 _loadAccount();
               }
             },
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all(color: Colors.grey.shade400)),
-                height: 40.0,
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5.0,
+            iconData: Icons.accessibility,
+            title: AppLocalizations.text(LangKey.actions),
+          ),
+
+          /// Tập tin
+          Visibility(
+            visible: !ChatConnection.isChatHub,
+            child: _actionButtonTile(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ConversationFileScreen(
+                      roomData: widget.roomData,
+                      chatMessage: widget.chatMessage,
                     ),
-                    const Icon(
-                      Icons.accessibility,
-                      color: Colors.blue,
-                    ),
-                    Container(
-                      width: 5.0,
-                    ),
-                    Expanded(
-                        child: AutoSizeText(
-                            AppLocalizations.text(LangKey.actions)))
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
+              iconData: Icons.folder,
+              iconColor: const Color(0xff5686E1),
+              title: AppLocalizations.text(LangKey.file),
             ),
           ),
-          Container(
-            height: 10.0,
-          ),
-          //  Bật/tắt chathub
-          if (widget.isChatBot!)
-            Center(
-              child: Container(
-                height: 40.0,
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AutoSizeText(
-                      AppLocalizations.text(LangKey.chatbot),
-                      minFontSize: 10,
-                      maxFontSize: 20,
-                    ),
-                    Spacer(),
-                    StreamBuilder<bool>(
-                      stream: chatbotService.isActiveChatbotStream,
-                      initialData: chatbotService.currentStatus,
-                      builder: (context, snapshot) {
-                        final isActive = snapshot.data ?? false;
-                        return Transform.scale(
-                          scale: 0.8,
-                          child: CupertinoSwitch(
-                            value: isActive,
-                            onChanged: (bool value) async {
-                              final roomId = chatbotService.currentRoomId;
-                              if (roomId != null) {
-                                final success =
-                                    await ChatConnection.changeStatusChatbot(
-                                        roomId, value ? 1 : 0);
-                                if (success)
-                                  chatbotService
-                                      .setStatus(value == true ? 1 : 0);
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+
+          ///Xem thành viên
+          if (widget.roomData.isGroup!)
+            Visibility(
+              visible: ChatConnection.isChatHub,
+              child: _actionButtonTile(
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          ChatGroupMembersScreen(roomData: widget.roomData)));
+                },
+                iconData: Icons.group,
+                iconColor: const Color(0xff5686E1),
+                title: AppLocalizations.text(LangKey.viewMembers),
               ),
             ),
+
+          /// Rời nhóm
+          if (widget.roomData.isGroup!)
+            Visibility(
+              visible: ChatConnection.isChatHub,
+              child: _actionButtonTile(
+                onTap: () {
+                  _leaveRoom(widget.roomData.sId!);
+                },
+                iconData: Icons.remove_circle,
+                iconColor: const Color(0xff5686E1),
+                title: AppLocalizations.text(LangKey.leaveConversation),
+              ),
+            ),
+
+          ///Xóa cuộc trò chuyện
+          if (!widget.roomData.isGroup! || ChatConnection.isChatHub
+              ? (widget.roomData.owner!.sId == ChatConnection.user!.id &&
+                  widget.roomData.isGroup!)
+              : widget.groupOwner!.sId == ChatConnection.user!.id &&
+                  widget.roomData.isGroup!)
+            Visibility(
+              visible: ChatConnection.isChatHub,
+              child: _actionButtonTile(
+                onTap: () {
+                  !widget.roomData.isGroup!
+                      ? _removeLeaveRoom(widget.roomData.sId!)
+                      : _removeRoom(widget.roomData.sId!);
+                },
+                iconData: Icons.delete,
+                iconColor: Colors.red,
+                title: AppLocalizations.text(LangKey.deleteConversation),
+                textColor: Colors.red,
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: socialInformation(),
+          ),
+          SizedBox(
+            height: 30,
+          )
         ],
       ),
+    );
+  }
+
+  Widget _actionButtonTile({
+    required VoidCallback onTap,
+    required IconData iconData,
+    required String title,
+    Color iconColor = Colors.blue,
+    Color? textColor,
+  }) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Center(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10.0),
+                border: Border.all(color: Colors.grey.shade400),
+              ),
+              height: 40.0,
+              width: MediaQuery.of(context).size.width * 0.85,
+              child: Row(
+                children: [
+                  const SizedBox(width: 5.0),
+                  Icon(iconData, color: iconColor),
+                  const SizedBox(width: 5.0),
+                  Expanded(
+                    child: AutoSizeText(
+                      title,
+                      style: TextStyle(color: textColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10.0),
+      ],
     );
   }
 
@@ -1578,116 +1499,6 @@ class _ConversationInformationScreenState
           );
   }
 
-  Widget actionView() {
-    return Expanded(
-      child: ListView(
-        physics: const ClampingScrollPhysics(),
-        children: [
-          _section(
-              const Icon(
-                Icons.folder,
-                color: Color(0xff5686E1),
-                size: 35,
-              ),
-              AppLocalizations.text(LangKey.file), () {
-            Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => ConversationFileScreen(
-                      roomData: widget.roomData,
-                      chatMessage: widget.chatMessage,
-                    )));
-          }),
-
-          /// NOTE
-          _section(
-              const Icon(
-                Icons.note_add,
-                color: Color(0xff5686E1),
-                size: 35,
-              ),
-              AppLocalizations.text(LangKey.create_note), () async {
-            await Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => CreateNoteScreen(
-                      roomData: widget.roomData,
-                      chatMessage: widget.chatMessage,
-                    )));
-            _bloc.getNotes(widget.roomData.sId!);
-          }),
-          ListNoteComponent(_bloc, () => _bloc.getNotes(widget.roomData.sId!),
-              widget.roomData),
-          if (widget.roomData.isGroup!)
-            Padding(
-              padding:
-                  const EdgeInsets.only(left: 50.0, right: 50.0, top: 13.0),
-              child: Container(
-                height: 1.0,
-                color: const Color(0xFFE5E5E5),
-              ),
-            ),
-          if (widget.roomData.isGroup!)
-            _section(
-                const Icon(
-                  Icons.group,
-                  color: Color(0xff5686E1),
-                  size: 35,
-                ),
-                AppLocalizations.text(LangKey.viewMembers), () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) =>
-                      ChatGroupMembersScreen(roomData: widget.roomData)));
-            }),
-          if (widget.roomData.isGroup!)
-            Padding(
-              padding:
-                  const EdgeInsets.only(left: 50.0, right: 50.0, top: 13.0),
-              child: Container(
-                height: 1.0,
-                color: const Color(0xFFE5E5E5),
-              ),
-            ),
-          if (widget.roomData.isGroup!)
-            _section(
-                const Icon(
-                  Icons.remove_circle,
-                  color: Color(0xff5686E1),
-                  size: 35,
-                ),
-                AppLocalizations.text(LangKey.leaveConversation), () {
-              _leaveRoom(widget.roomData.sId!);
-            }, textColor: Colors.black),
-          if (!widget.roomData.isGroup! ||
-              (widget.roomData.owner?.sId == ChatConnection.user!.id &&
-                  widget.roomData.isGroup!))
-            // Padding(
-            //   padding: const EdgeInsets.only(
-            //       left: 50.0, right: 50.0, top: 13.0),
-            //   child: Container(
-            //     height: 1.0,
-            //     color: const Color(0xFFE5E5E5),
-            //   ),
-            // ),
-            /// CHƯA CHECK ĐIỀU KIỆN HIỂN THỊ
-            socialInformation(),
-          if (!widget.roomData.isGroup! || ChatConnection.isChatHub
-              ? (widget.roomData.owner!.sId == ChatConnection.user!.id &&
-                  widget.roomData.isGroup!)
-              : widget.groupOwner!.sId == ChatConnection.user!.id &&
-                  widget.roomData.isGroup!)
-            _section(
-                const Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                  size: 35,
-                ),
-                AppLocalizations.text(LangKey.deleteConversation), () {
-              !widget.roomData.isGroup!
-                  ? _removeLeaveRoom(widget.roomData.sId!)
-                  : _removeRoom(widget.roomData.sId!);
-            }, textColor: Colors.red)
-        ],
-      ),
-    );
-  }
-
   Widget _divider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 50.0, vertical: 13.0),
@@ -1698,9 +1509,11 @@ class _ConversationInformationScreenState
   /// DEV
   Widget socialInformation() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
-      padding: EdgeInsets.symmetric(horizontal: 20.0),
-      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0),
+          border: Border.all(color: Colors.grey.shade400)),
+      padding: EdgeInsets.only(left: 5, right: 20),
+      width: MediaQuery.of(context).size.width * 0.85,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1710,11 +1523,18 @@ class _ConversationInformationScreenState
               expandedSocialInfo = !expandedSocialInfo;
             }),
             child: Container(
-              height: 50.0,
+              height: 40.0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  const Icon(
+                    Icons.social_distance_outlined,
+                    color: Color(0xff5686E1),
+                  ),
+                  Container(
+                    width: 5,
+                  ),
                   Expanded(
                     child: Text(
                       AppLocalizations.text(LangKey.socialInformation),

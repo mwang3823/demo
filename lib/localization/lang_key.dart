@@ -195,4 +195,5 @@ class LangKey {
   static const String chat_summary = "chat_summary";
   static const String chat_messages = "chat_messages";
   static const String close = "close";
+  static const String select_tags = "select_tags";
 }
