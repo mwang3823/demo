@@ -80,14 +80,17 @@ spring:
   application:
     name: msa
   datasource:
-    url: jdbc:mysql://${MYSQLHOST}:${MYSQLPORT}/${MYSQLDATABASE}
-    username: ${MYSQLUSER}
-    password: ${MYSQLPASSWORD}
+    url: jdbc:mysql://mysql.railway.internal:3306/msa_project?useSSL=false&serverTimezone=UTC
+    username: root
+    password: vPjGPNZHubvCNTdPfWwSoeWAWyqAvaLo
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.MySQL8Dialect
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: false
