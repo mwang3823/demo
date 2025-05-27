@@ -101,13 +101,11 @@ spring:
       password:
       database: 0
   cache:
-    type: redis
-    redis:
-      time-to-live: 3600000
-      cache-null-values: true
-
+    type: none
   quartz:
     job-store-type: jdbc
+    jdbc:
+      initialize-schema: always
     properties:
       org:
         quartz:
@@ -117,9 +115,17 @@ spring:
           jobStore:
             class: org.quartz.impl.jdbcjobstore.JobStoreTX
             driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            tablePrefix: QRTZ_
+            isClustered: true
             misfireThreshold: 60000
-    jdbc:
-      initialize-schema: always
+            dataSource: myDS
+          dataSource:
+            myDS:
+              driver: com.mysql.cj.jdbc.Driver
+              URL: jdbc:mysql://mysql.railway.internal:3306/msa_project
+              user: root
+              password: vPjGPNZHubvCNTdPfWwSoeWAWyqAvaLo
+
 
   mail:
     host: smtp.gmail.com
