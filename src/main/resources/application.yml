@@ -134,7 +134,7 @@ spring:
             enable: true
 
 server:
-  port: 1081
+  port: ${PORT:1081}
   servlet:
     context-path: /msa/api
 
